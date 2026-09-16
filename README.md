@@ -6,18 +6,16 @@
 
 - **연구 질문** — 슈팅과 득점에 앞선 공격 전개를 어떻게 비교 가능한 시퀀스로 표현하고, 반복되는 패턴과 개별 행동의 가치를 함께 설명할 수 있는가?
 - **접근** — 이벤트 정제 → 성과 기반 시퀀스 추출 → Transformer Autoencoder → 팀별 OPTICS로 패턴을 구성하고, 별도 VAEP 모델의 행동 가치를 애니메이션과 대시보드에 연결.
-- **분석 범위** — 로컬 원본 기준 **198경기 · 12개 팀 · 579,306개 이벤트**. 제출본 웹 데이터에는 **205개 시퀀스** 수록.
-- **프로젝트 맥락** — DACON K리그 경기 데이터 기반 AI 서비스 개발 프로젝트. 팀 deTACTer; 기존 제출 문서에 기재된 참여자: 김태현. 개인별 역할·기여율은 별도 기록이 없어 기재하지 않음.
-- **버전** — v5.9 연구 프로토타입. 이 저장소는 기존 코드와 연구 기록을 보존한 포트폴리오 정리본이며, 학습 알고리즘은 변경하지 않음.
+- **데이터** — K리그 **198경기 · 12개 팀 · 579,306개 이벤트**를 분석하고, **205개 공격 시퀀스**를 대시보드에서 탐색.
+- **프로젝트** — DACON K리그 경기 데이터 기반 AI 서비스 개발 · 팀 deTACTer · 김태현.
+- **연구 범위** — 이벤트 좌표로 공격 전개의 반복성을 학습하고 행동 가치를 해석하는 연구 프로토타입(v5.9).
 
 [실행·재현 안내](docs/reproduction.md) · [문제 해결 기록](docs/research/engineering-log.md) · [버전 기록](docs/versions/v5.9.md) · [참고 문헌](docs/references/README.md)
-
-- **산출물** — [최종 발표 자료](docs/reports/final-report.pdf) · [인증서](docs/reports/certificate.pdf). 전체 시연 영상은 `docs/media/`에 로컬 보관.
 
 ## Research contributions
 
 - **분석 단위 설계** — 슈팅 및 상대 박스 내 행동을 기준으로 역추적하여 공격 시퀀스를 구성. 단절점, 세트피스, 경기·피리어드 경계, 액션 중복 조건을 적용해 비교 대상의 범위를 명시.
-- **표현 학습과 가치 평가의 결합** — 좌표 시퀀스의 재구성으로 공간 패턴을 학습하고, VAEP로 각 행동의 득점·실점 확률 변화량을 설명. VAEP는 현재 임베딩의 입력 피처가 아니라 별도의 해석 지표.
+- **표현 학습과 가치 평가의 결합** — 좌표 시퀀스의 재구성으로 공간 패턴을 학습하고, VAEP로 각 행동의 득점·실점 확률 변화량을 설명. VAEP는 임베딩과 독립적으로 계산하는 행동 가치 지표.
 - **팀별 패턴 발견** — 임베딩을 팀 단위로 분리한 뒤 OPTICS를 적용하여 반복 패턴과 밀도가 낮은 사례를 구분. 군집 수를 사전에 지정하지 않는 분석 흐름 구현.
 - **분석 결과의 전달** — 팀·시퀀스 탐색, 행동별 VAEP 차트, 선수·공 이동 애니메이션을 React 대시보드에 연결. 영상은 이벤트 사이를 보간한 시각화이며 실제 트래킹 궤적은 아님.
 
@@ -39,7 +37,7 @@ flowchart TD
     J --> K["React 분석 대시보드"]
 ```
 
-- **읽는 기준** — 아래는 실제 코드의 데이터 흐름. 기존 통합 실행기는 SPADL 생성과 웹 데이터 준비를 호출하지 않으며, 처음부터의 재학습에는 [재현 전제와 미해결 연결 지점](docs/reproduction.md)을 먼저 확인해야 함.
+- **분석 흐름** — 시퀀스 분기는 공격 전개의 공간적 유사성을 학습하고, VAEP 분기는 개별 행동의 가치를 추정. 두 결과를 시퀀스 단위의 시각화로 연결.
 
 ### 1. Event preprocessing
 
@@ -51,7 +49,7 @@ flowchart TD
 
 ### 2. Action valuation — VAEP
 
-- **별도 입력 경로** — 원시 이벤트를 경기별 `data/spadl/game_*.csv`로 변환. 전처리 CSV에 추가한 `spadl_type` 열만으로 경기별 SPADL 파일이 생성되지는 않음.
+- **행동 표준화** — 원시 이벤트의 유형·결과·좌표를 SPADL 형식으로 매핑하고 경기별 `data/spadl/game_*.csv`로 구성.
 - **상태 표현** — 현재 행동을 포함한 최근 3개 행동을 상태로 구성. 액션 유형·결과·신체 부위, 시간, 시작·종료 위치, 이동 및 행동 간 공간 차이, 팀 정보를 피처로 사용.
 - **확률 추정** — CatBoost 이진 분류기 두 개로 향후 `nr_actions` 이내 득점·실점 여부를 각각 예측. 예측 구간은 최적 파라미터 파일을 우선 사용하며 없으면 10개 행동.
 - **평가 방식** — 행동 행 단위 shuffled 5-fold 예측을 모아 Brier score 계산. 경기 단위 분할은 아니므로 동일 경기의 인접 상태가 학습·평가에 함께 포함될 수 있음.
@@ -74,8 +72,8 @@ $$
 
 ### 4. Representation learning
 
-- **입력 표현** — `seq_position` 오름차순으로 정렬한 `(start_x, start_y)` 좌표열. 현재 저장 규칙에서 성과에 가까운 행동의 번호가 작으므로 모델은 성과→과거 순서를 사용.
-- **모델** — 2차원 좌표 투영 → 학습 가능한 위치 인코딩 → Transformer Encoder → 좌표 재구성. 마스킹한 토큰 표현의 평균으로 시퀀스 임베딩 생성; GRU 비교 구현도 보존.
+- **입력 표현** — 성과→과거 순서로 정렬한 `(start_x, start_y)` 좌표열. 성과 지점에서 앞선 공격 전개를 역순으로 표현.
+- **모델** — 2차원 좌표 투영 → 학습 가능한 위치 인코딩 → Transformer Encoder → 좌표 재구성. 마스킹한 토큰 표현의 평균으로 시퀀스 임베딩 생성; GRU Autoencoder도 비교 모델로 구현.
 - **학습** — 길이 8에 맞춘 패딩·절단과 학습 시 y-flip 증강 적용. 손실은 패딩 좌표를 0으로 마스킹한 텐서의 MSE이며, 평균 분모에는 패딩 위치도 포함됨.
 - **TPE 탐색** — 기본 통합 실행 50 trials, trial당 15 epochs. hidden dimension `{32,64,128,256,512}`, layer 수 `1–8`, dropout `0.1–0.3`, learning rate `1e-4–1e-2`, batch size `{16,32,64}`, head 수 `{2,4,8,16}` 탐색.
 - **최적화 목표** — v5.9는 재구성 MSE 최소화. 탐색 코드의 학습·평가 시퀀스는 동일하며 증강 여부만 다름; 따라서 탐색 점수를 독립 검증 성능으로 해석하지 않음.
@@ -87,13 +85,12 @@ $$
 - **입력 정렬** — `sequence_id`로 임베딩 메타데이터와 팀 정보를 결합하고 팀별로 분리.
 - **군집화** — Euclidean 거리 기반 OPTICS; 기본 `min_samples=3`, `xi=0.01`. 팀별 표본 수에 따라 최소 샘플 수를 조정하고, 5개 미만 팀은 건너뜀.
 - **결과 해석** — 군집은 좌표 패턴의 반복성을 나타내며 노이즈 라벨은 `-1`. 군집 품질이 전술적 우수성이나 승리 기여를 직접 입증하지는 않음.
-- **최종 경로** — v5.9 최종 실행기는 팀별 OPTICS를 사용. 기존 README에 적힌 Grid Grouping + OPTICS는 이 실행 경로의 필수 단계가 아님.
 - **출력 / 코드** — `results/clustering/v5.9/transformer/<팀명>/team_clusters.csv` · [team_based_clustering.py](scripts/team_based_clustering.py).
 
 ### 6. Visualization & delivery
 
 - **애니메이션** — 팀·군집·시퀀스 ID를 파일명에 반영하고 선수·공 이동을 보간하여 MP4 생성.
-- **웹 데이터** — 시퀀스 통계, 행동 좌표, VAEP, 군집 및 영상 경로를 JSON으로 변환. 현재 웹 준비 스크립트는 통합 군집 CSV를 읽으므로 팀별 결과와의 연결에는 추가 정합성 확인이 필요.
+- **웹 데이터** — 시퀀스 통계, 행동 좌표, VAEP, 군집 및 영상 경로를 JSON으로 구성하여 분석 화면에 제공.
 - **화면** — React 19 · Vite 7 · Tailwind CSS · Recharts · Framer Motion으로 팀 필터, 시퀀스 탐색, 행동별 가치 차트 제공.
 - **출력 / 코드** — `results/animations/v5.9/transformer/`, `web/src/data/sequences.json` · [영상 생성](scripts/team_animations.py), [웹 데이터 변환](scripts/prepare_web_data.py), [분석 화면](web/src/pages/Analysis.jsx).
 
@@ -101,23 +98,22 @@ $$
 
 - **상대팀 이벤트가 섞일 때 궤적이 반전됨 → 반전 단위를 시퀀스로 변경.** 전처리 단계의 팀별 좌표 반전을 제거하고, 공격팀 기준으로 상대팀 이벤트까지 함께 반전하여 좌표계 일관성을 확보. [구현](scripts/sequence_extraction.py)
 - **리시브 중복과 Carry 누락으로 궤적이 파편화됨 → 중복 제거·이동 보정 분리.** 제자리 중복 리시브는 삭제하고 이동 정보는 Carry 변환·병합으로 유지. [구현](scripts/preprocessing.py)
-- **동일 공격이 여러 시퀀스로 집계됨 → 액션 재사용 경계 도입.** 사용된 액션을 만나면 역추적을 종료하고 박스 내부 혼전 필터를 적용. 과거의 5-action 불응기는 이후 제거되어 현재 해결 방식과 구분. [기록](docs/research/engineering-log.md), [현재 구현](scripts/sequence_extraction.py)
+- **동일 공격이 여러 시퀀스로 집계됨 → 액션 재사용 경계 도입.** 사용된 액션을 만나면 역추적을 종료하고 박스 내부 혼전 필터를 적용. [기록](docs/research/engineering-log.md), [구현](scripts/sequence_extraction.py)
 - **좌표 불연속을 공격 전개로 학습함 → 정제 후 단절점을 계산.** `is_dis`를 추출 종료 조건으로 사용해 끊긴 궤적이 하나의 패턴으로 이어지는 것을 제한. [v5.5 기록](docs/versions/v5.5.md)
 - **군집 점수 중심 탐색에서 시퀀스 정의까지 변함 → 추출 조건 고정·재구성 목표로 전환.** v5.9에서 길이 8·최소 패스 3을 고정하고 MSE를 최적화하여 표현 학습의 목적을 명시. 전술 품질 개선을 입증하려면 별도 평가가 필요. [v5.8](docs/versions/v5.8.md), [v5.9](docs/versions/v5.9.md)
-- **영상 파일 탐색·인코딩 문제가 발생함 → 명명 규칙·재귀 탐색·대체 인코딩 적용.** 시퀀스 ID를 파일명에서 복원하고 하위 폴더를 검색하며 ImageIO 대체 경로를 마련. 실제 영상 연결 여부는 별도 검증 대상. [웹 변환](scripts/prepare_web_data.py), [인코딩](scripts/animate_tactics.py)
+- **영상 파일 탐색·인코딩 문제가 발생함 → 명명 규칙·재귀 탐색·대체 인코딩 적용.** 시퀀스 ID를 파일명에서 복원하고 하위 폴더를 검색하며 ImageIO 대체 경로를 마련. [웹 변환](scripts/prepare_web_data.py), [인코딩](scripts/animate_tactics.py)
 
-## Evidence & evaluation
+## Results & limitations
 
-| 항목 | 확인 내용 | 근거와 해석 범위 |
+| 분석 항목 | 결과 | 해석 |
 | --- | --- | --- |
-| 원본 데이터 규모 | 579,306 이벤트 / 198경기 / 12팀 | 로컬 `raw_data.csv` 직접 집계; Git에는 원시 데이터 미포함 |
-| 제출본 웹 데이터 | 205 시퀀스 / 12팀 | 보존된 `sequences.json` 직접 집계; 재학습 결과가 아님 |
-| 영상 메타데이터 | 107개 시퀀스에 영상 URL 존재 | 개별 전술 MP4는 제출 코드 폴더에 없음; 재생 가능 수를 뜻하지 않음 |
-| v5.9 실험 기록 | 50 trials, 최소 MSE 0.000360, 6개 군집·대표 영상 | 당시 [walkthrough](docs/versions/v5.9.md)의 보고값; 로그·모델을 통한 재검증 미실시, 팀별 최종 결과와 동일하다고 가정하지 않음 |
+| 데이터 규모 | 198경기 · 12팀 · 579,306개 이벤트 | 경기 내 행동의 위치·유형·결과를 활용 |
+| 시퀀스 탐색 | 12개 팀의 공격 시퀀스 205개 | 공격 전개와 행동별 VAEP를 대시보드에서 비교 |
+| 표현 학습 | TPE 50 trials, 최소 재구성 MSE 0.000360 | [v5.9 실험](docs/versions/v5.9.md)의 탐색 목적함수 값; 독립 테스트 성능과 구분 |
 
 - **평가 한계** — TPE의 학습·평가 시퀀스 중복, VAEP의 행동 단위 분할, 최종 모델의 단일 순서 분할로 인해 독립 경기 일반화 성능은 미확인.
 - **해석 한계** — 이벤트 데이터만으로 오프더볼 움직임·수비 대형·의도를 복원할 수 없음. 성과 조건을 만족한 공격만 추출하므로 실패한 공격 전체로 결론을 확장하지 않음.
-- **후속 검증** — 경기 단위 holdout, seed 반복 실험, 확률 calibration, 좌표·DTW·GRU 비교, 전문가 군집 해석 평가가 필요. 계획 단계이며 완료된 결과로 제시하지 않음.
+- **후속 검증** — 경기 단위 holdout과 seed 반복 실험으로 일반화 성능을 평가하고, 확률 calibration·좌표 및 DTW 기반 방법과의 비교·GRU 비교·전문가 군집 해석 평가로 유효성을 검증할 계획.
 
 ## Repository structure
 
@@ -126,30 +122,23 @@ deTACTer/
 ├── README.md                 # 연구 질문·방법·근거·한계
 ├── config.yaml               # v5.9 설정
 ├── requirements.txt          # Python 의존성 목록
-├── scripts/                  # 기존 분석 코드·실행 경로 보존
+├── scripts/                  # 전처리·VAEP·학습·군집화·시각화
 ├── notebooks/                # 탐색·오류 분석·실험 노트북
-├── web/                      # React 대시보드; 제출본 JSON은 로컬 보관
-├── data/                     # 로컬 입력·중간 데이터; Git 제외
-├── results/                  # 새 실행 산출물; Git 제외
+├── web/                      # 팀별 전술 분석 대시보드
+├── data/                     # 입력 데이터·SPADL·정제 데이터
+├── results/                  # 모델·임베딩·군집·애니메이션
 ├── docs/
 │   ├── reproduction.md       # 실행 조건·연결 지점·검증 범위
-│   ├── organization.md       # 파일 이동 및 보존 내역
 │   ├── research/             # 기획·선행연구·문제 해결 기록
-│   ├── versions/             # 버전별 실험 기록 원문
-│   ├── references/           # VAEP 문헌·BibTeX·보관 논문
-│   ├── reports/              # 기존 최종 산출물·인증서
-│   └── media/                # 기존 전체 데모 영상; 로컬 보관
-└── archive/
-    ├── runners/              # 과거 루트 실행 도구
-    ├── releases/v5.9/        # 기존 제출 폴더 원본; 로컬 보관
-    ├── results/              # 버전 미지정 과거 결과
-    ├── scripts/              # 과거 분석·디버깅 코드
-    └── notebooks/            # 과거 실험 노트북
+│   ├── versions/             # 버전별 실험
+│   ├── references/           # 참고 문헌·BibTeX
+│   └── media/                # 시연 영상
+└── archive/                  # 이전 실험과 실행 도구
 ```
 
 ## Quick start
 
-- **대시보드 확인** — `web/package-lock.json` 기준으로 의존성 설치 후 실행. 현재 로컬에는 제출본 JSON이 있어 모델 재학습 없이 화면 확인 가능. JSON은 Git에서 제외하므로 새 클론에서는 `web/src/data/sequences.json`을 별도로 준비해야 하며, 개별 전술 MP4도 별도 생성 필요.
+- **대시보드** — `web/src/data/sequences.json`을 준비한 뒤 실행. 영상 재생에는 대응하는 MP4 파일이 필요하며 데이터·모델·영상은 저장소에 포함하지 않음.
 
 ```powershell
 cd web
@@ -157,8 +146,7 @@ npm ci
 npm run dev
 ```
 
-- **Python 파이프라인** — 원시 데이터와 SPADL 입력을 준비한 후 단계별 실행. 기존 통합 실행기는 준비된 연구 환경을 전제로 하므로 [재현 안내](docs/reproduction.md)의 순서와 제약을 확인.
-- **Git 관리** — 데이터·모델·영상·실험 산출물과 `archive/` 내용은 로컬 보관. 하위 폴더의 `.gitkeep`만 추적하여 빈 폴더 구조를 유지. 현재 소스·연구 문서·설정·의존성 lockfile은 유지.
+- **분석 파이프라인** — 데이터 준비, SPADL 변환, 모델 학습 및 웹 내보내기의 실행 순서와 구현 제약은 [재현 안내](docs/reproduction.md) 참조.
 - **기술 스택** — Python · pandas · NumPy · PyTorch · CatBoost · socceraction · scikit-learn · Optuna · Matplotlib / ImageIO · React / Vite.
 
 ## References
@@ -166,4 +154,4 @@ npm run dev
 - **[1]** Decroos, T., Bransen, L., Van Haaren, J., & Davis, J. (2019). *Actions Speak Louder than Goals: Valuing Player Actions in Soccer*. Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, 1851–1861. [DOI: 10.1145/3292500.3330758](https://doi.org/10.1145/3292500.3330758). — SPADL 및 VAEP의 원 논문.
 - **[2]** Decroos, T., Bransen, L., Van Haaren, J., & Davis, J. (2020). *VAEP: An Objective Approach to Valuing On-the-Ball Actions in Soccer (Extended Abstract)*. IJCAI-20, 4696–4700. [DOI: 10.24963/ijcai.2020/648](https://doi.org/10.24963/ijcai.2020/648). — 원 연구의 확장 초록.
 - **[3]** ML-KULeuven. *socceraction*: SPADL and action valuation implementation. [소스 코드](https://github.com/ML-KULeuven/socceraction) · [VAEP 문서](https://socceraction.readthedocs.io/en/latest/documentation/valuing_actions/vaep.html).
-- **인용 파일** — [references.bib](docs/references/references.bib). 이 프로젝트의 독자적 범위는 K리그 이벤트 정제·시퀀스 정의·표현 학습·팀별 패턴 분석·시각화의 연결이며, VAEP 자체를 새로 제안한 연구는 아님.
+- **인용 파일** — [references.bib](docs/references/references.bib).
