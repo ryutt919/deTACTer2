@@ -89,7 +89,10 @@ $$
 
 ### 6. 분석 결과를 시각적으로 해석
 
-<img width="1160" height="816" alt="image" src="https://github.com/user-attachments/assets/8efdb2ba-0c3c-47b3-98f6-4cd87a065c28" />
+<img width="1182" height="832" alt="image" src="https://github.com/user-attachments/assets/21965551-9736-4118-a096-ed49546cd6c8" />
+[시퀀스 애니메이션, 공과 선수들의 움직임을 시각화]
+<img width="1650" height="796" alt="image" src="https://github.com/user-attachments/assets/76d6f501-5b54-4801-b5e3-e2f827a3fc12" />
+[action별 VAEP 시각화]
 
 대시보드에서는 팀을 고르고 공격 시퀀스를 살펴본 뒤, 전개 애니메이션과 행동별 가치 변화를 함께 볼 수 있다. 애니메이션은 이벤트 위치 사이를 보간해 공과 선수의 이동을 보여주는 것이라, 실제 트래킹 영상과는 다르다 — 관측되지 않은 구간을 이어붙인 표현이다. 결국 이 도구는 분석가가 발견된 군집을 검토하고 전개 방식에 의미를 부여하기 위한 것이고, 자동으로 나온 군집 결과 자체를 완성된 전술 분류로 보진 않는다.
 
