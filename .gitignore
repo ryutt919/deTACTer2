@@ -84,3 +84,6 @@ node_modules/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Portfolio demo published with the README
+!/docs/media/demo.mp4
