@@ -4,7 +4,7 @@
 
 `Football Analytics` · `Sequence Representation Learning` · `VAEP` · `Team-wise Clustering`
 
-**[▶ 데모 영상 보기](docs/media/demo.mp4)**
+**[웹사이트 바로가기](https://de-tac-ter.vercel.app/)** · **[▶ 데모 영상 보기](docs/media/demo.mp4)**
 
 - **연구 질문** — 슈팅과 득점에 앞선 공격 전개를 어떻게 비교 가능한 시퀀스로 표현하고, 반복되는 패턴과 개별 행동의 가치를 함께 설명할 수 있는가?
 - **접근** — 이벤트 정제 → 성과 기반 시퀀스 추출 → Transformer Autoencoder → 팀별 OPTICS로 패턴을 구성하고, 별도 VAEP 모델의 행동 가치를 애니메이션과 대시보드에 연결.
