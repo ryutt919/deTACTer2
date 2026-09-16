@@ -4,7 +4,7 @@
 
 `Football Analytics` · `Sequence Representation Learning` · `VAEP` · `Team-wise Clustering`
 
-**[웹사이트 바로가기](https://de-tac-ter.vercel.app/)** · **[▶ 데모 영상 보기](docs/media/demo.mp4)**
+**[웹사이트 바로가기](https://de-tac-ter.vercel.app/)** · **[YouTube에서 보기](https://www.youtube.com/watch?v=cMdmHzS3dso)** · **[영상 파일](docs/media/demo.mp4)**
 
 https://github.com/user-attachments/assets/b42762e2-34f7-4d5b-82dd-311a3e4aa445
 
